@@ -161,13 +161,21 @@ resource "aws_ecs_task_definition" "nextcloud" {
   memory                   = var.memory
   execution_role_arn       = aws_iam_role.exec.arn
 
-  volume {
-    name = "html"
+  dynamic "volume" {
+    for_each = var.access_point_ids
 
-    efs_volume_configuration {
-      file_system_id     = var.file_system_id
-      root_directory     = "/"
-      transit_encryption = "ENABLED"
+    content {
+      name = volume.key
+
+      efs_volume_configuration {
+        file_system_id     = var.file_system_id
+        transit_encryption = "ENABLED"
+
+        authorization_config {
+          access_point_id = volume.value
+          iam             = "DISABLED"
+        }
+      }
     }
   }
 
@@ -177,9 +185,11 @@ resource "aws_ecs_task_definition" "nextcloud" {
     essential    = true
     portMappings = [{ containerPort = 80 }]
 
-    mountPoints = [{
-      sourceVolume  = "html"
-      containerPath = "/var/www/html"
+    # Only state that must survive a restart lives on EFS. The application
+    # code stays in the image and is copied to fast local disk on start.
+    mountPoints = [for k in sort(keys(var.access_point_ids)) : {
+      sourceVolume  = k
+      containerPath = "/var/www/html/${k}"
       readOnly      = false
     }]
 
@@ -214,8 +224,8 @@ resource "aws_ecs_service" "nextcloud" {
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
-  # First start copies Nextcloud into the empty file system, which is slow.
-  health_check_grace_period_seconds = 600
+  # First start copies the code to local disk and installs the schema.
+  health_check_grace_period_seconds = 900
   wait_for_steady_state             = true
 
   network_configuration {

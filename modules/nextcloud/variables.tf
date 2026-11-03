@@ -76,3 +76,8 @@ variable "memory" {
   type    = number
   default = 1024
 }
+
+variable "access_point_ids" {
+  description = "EFS access points by directory name: data, config, custom_apps"
+  type        = map(string)
+}

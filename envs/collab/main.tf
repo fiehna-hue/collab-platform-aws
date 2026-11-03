@@ -82,11 +82,12 @@ module "nextcloud" {
   # Mirrored in ECR (tasks cannot reach Docker Hub), pinned by digest.
   image = "247906201098.dkr.ecr.us-east-1.amazonaws.com/nextcloud@sha256:c73d6b4ada5126dc56bbd6357f9c73c9caf99f4a692bd2da4187ea58b9089eec"
 
-  db_host        = module.database.endpoint
-  db_name        = "inventory"
-  db_user        = module.database.username
-  db_secret_arn  = module.database.secret_arn
-  file_system_id = module.storage.file_system_id
+  db_host          = module.database.endpoint
+  db_name          = "inventory"
+  db_user          = module.database.username
+  db_secret_arn    = module.database.secret_arn
+  file_system_id   = module.storage.file_system_id
+  access_point_ids = module.storage.access_point_ids
 
   # Mount targets and endpoints must exist before the first task starts.
   depends_on = [module.storage, module.endpoints]
