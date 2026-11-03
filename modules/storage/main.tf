@@ -38,3 +38,28 @@ resource "aws_efs_mount_target" "this" {
   subnet_id       = var.subnet_ids[count.index]
   security_groups = [aws_security_group.efs.id]
 }
+
+# One access point per directory that must survive a restart. Each one forces
+# uid/gid 33 (www-data) so file ownership works without chown on NFS.
+resource "aws_efs_access_point" "this" {
+  for_each = toset(["data", "config", "custom_apps"])
+
+  file_system_id = aws_efs_file_system.this.id
+
+  posix_user {
+    uid = 33
+    gid = 33
+  }
+
+  root_directory {
+    path = "/${each.key}"
+
+    creation_info {
+      owner_uid   = 33
+      owner_gid   = 33
+      permissions = "0750"
+    }
+  }
+
+  tags = { Name = "${var.name}-${each.key}" }
+}
