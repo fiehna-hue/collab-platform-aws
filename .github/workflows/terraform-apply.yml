@@ -50,4 +50,6 @@ jobs:
         run: terraform validate
 
       - name: Terraform apply
+        env:
+          TF_VAR_allowed_cidr: ${{ secrets.ALLOWED_CIDR }}
         run: terraform apply -input=false -auto-approve

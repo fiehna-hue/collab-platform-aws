@@ -48,6 +48,8 @@ jobs:
         run: terraform validate
 
       - name: Terraform plan
+        env:
+          TF_VAR_allowed_cidr: ${{ secrets.ALLOWED_CIDR }}
         run: terraform plan -input=false -lock=false -no-color 2>&1 | tee plan.txt
 
       - name: Post plan to pull request

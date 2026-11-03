@@ -65,3 +65,33 @@ output "db_endpoint" {
 output "efs_id" {
   value = module.storage.file_system_id
 }
+
+module "nextcloud" {
+  source = "../../modules/nextcloud"
+
+  name                        = "collab"
+  role_prefix                 = "platform-app-collab"
+  vpc_id                      = module.network.vpc_id
+  public_subnet_ids           = module.network.public_subnet_ids
+  private_subnet_ids          = module.network.private_subnet_ids
+  app_security_group_id       = aws_security_group.app.id
+  db_security_group_id        = module.database.security_group_id
+  endpoints_security_group_id = module.endpoints.security_group_id
+  allowed_cidr                = var.allowed_cidr
+
+  # Mirrored in ECR (tasks cannot reach Docker Hub), pinned by digest.
+  image = "247906201098.dkr.ecr.us-east-1.amazonaws.com/nextcloud@sha256:c73d6b4ada5126dc56bbd6357f9c73c9caf99f4a692bd2da4187ea58b9089eec"
+
+  db_host        = module.database.endpoint
+  db_name        = "inventory"
+  db_user        = module.database.username
+  db_secret_arn  = module.database.secret_arn
+  file_system_id = module.storage.file_system_id
+
+  # Mount targets and endpoints must exist before the first task starts.
+  depends_on = [module.storage, module.endpoints]
+}
+
+output "alb_dns_name" {
+  value = module.nextcloud.alb_dns_name
+}
