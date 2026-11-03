@@ -88,7 +88,7 @@ resource "aws_lb_target_group" "nextcloud" {
 
   health_check {
     path                = "/status.php"
-    matcher             = "200"
+    matcher             = "200,400"
     interval            = 30
     timeout             = 10
     healthy_threshold   = 2
